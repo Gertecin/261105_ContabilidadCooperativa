@@ -3,7 +3,7 @@
 Aplicación web de contabilidad de partida doble con costeo conjunto.
 
 ## 🚀 Cómo arrancarlo
-1. Abrir `index.html` en el navegador o ver la URL de GitHub Pages.
+1. Abrir `index.html` en el navegador o visitar la URL de GitHub Pages: https://gertecin.github.io/261105_ContabilidadCooperativa/
 2. **Clave de acceso:** `molino2026`
 
 ## 🧪 Qué está simulado
@@ -11,7 +11,7 @@ Aplicación web de contabilidad de partida doble con costeo conjunto.
 - Datos semilla generados localmente (65 cuentas, 70 clientes, 15 socios).
 - Sin servicios externos.
 
-## 📊 Ejemplos resueltos (Para verificación manual de Kodarvia)
+## 📊 Ejemplos resueltos (Para verificación manual de integrador)
 
 ### 1. Molienda de 12.000 kg (Costeo Conjunto)
 **Costo Total:** (12.000 kg × 1.140 cent/kg) + (12.000 kg × 85 cent/kg) = **14.700.000 centésimos**.
