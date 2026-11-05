@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Slab:wght@500;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #FBF8F1;
+  color: #3B2F1E;
+  margin: 0;
+}
+
+h1, h2, h3, h4, .font-slab {
+  font-family: 'Roboto Slab', serif;
+}
+
+/* Utilidades de color personalizadas */
+.bg-flour { background-color: #FBF8F1; }
+.bg-beige { background-color: #E9DFC8; }
+.bg-dark { background-color: #3B2F1E; }
+.bg-gold { background-color: #D9A441; }
+.bg-darkGold { background-color: #8C6A2F; }
+.bg-green { background-color: #5E7D3A; }
+.bg-red { background-color: #B23A2E; }
+.text-flour { color: #FBF8F1; }
+.text-dark { color: #3B2F1E; }
+.text-gold { color: #D9A441; }
+.text-darkGold { color: #8C6A2F; }
+.text-green { color: #5E7D3A; }
+.text-red { color: #B23A2E; }
+.border-beige { border-color: #E9DFC8; }
