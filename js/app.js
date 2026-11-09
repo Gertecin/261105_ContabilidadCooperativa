@@ -1,5 +1,5 @@
 const { useState, useEffect } = React;
-const ADMIN_PASSWORD = "molino2026"; // Cambiar esta clave en producción
+const ADMIN_PASSWORD = "molino2026";
 
 const useLocalState = (key, init) => {
   const [state, setState] = useState(() => {
@@ -10,8 +10,6 @@ const useLocalState = (key, init) => {
   return [state, setState];
 };
 
-const formatMoney = (cents) => `$U ${(cents / 100).toFixed(2)}`;
-
 const Tabs = ({ current, set }) => {
   const tabs = ['Dashboard', 'Asientos', 'Moliendas', 'Socios', 'Distribución', 'Reportes', 'Admin'];
   return (
@@ -20,11 +18,7 @@ const Tabs = ({ current, set }) => {
         <button 
           key={t} 
           onClick={() => set(t)} 
-          className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${
-            (current === t || (current === 'Login' && t === 'Admin')) 
-              ? 'text-gold border-b-2 border-gold' 
-              : 'text-darkGold'
-          }`}
+          className={`px-4 py-3 text-sm font-semibold whitespace-nowrap ${current === t ? 'text-gold border-b-2 border-gold' : 'text-darkGold'}`}
         >
           {t === 'Admin' ? '🔒 Admin' : t}
         </button>
@@ -59,7 +53,7 @@ const Login = ({ onLogin }) => {
 
 const Admin = ({ data, setData }) => {
   const resetData = () => { 
-    if(confirm('¿Reiniciar todos los datos? Se perderán los asientos y moliendas creados.')) { 
+    if(confirm('¿Reiniciar todos los datos?')) { 
       localStorage.removeItem('molino_florida_data'); 
       location.reload(); 
     } 
@@ -71,7 +65,7 @@ const Admin = ({ data, setData }) => {
       <div className="bg-white p-4 rounded border border-beige space-y-2">
         <h3 className="font-bold text-sm">Configuración</h3>
         <p className="text-xs text-darkGold">Clave actual: <strong>molino2026</strong></p>
-        <p className="text-xs text-darkGold">Para cambiarla, edite la constante <code>ADMIN_PASSWORD</code> en <code>js/app.js</code></p>
+        <p className="text-xs text-darkGold">Para cambiarla, edite <code>ADMIN_PASSWORD</code> en <code>js/app.js</code></p>
       </div>
       <div className="bg-white p-4 rounded border border-beige space-y-2">
         <h3 className="font-bold text-sm">Gestión de datos</h3>
