@@ -1,5 +1,4 @@
 // Generador pseudoaleatorio determinista con semilla fija
-// Garantiza que los datos de ejemplo sean siempre idénticos
 const seededRandom = (seed) => {
   let s = seed;
   return () => {
@@ -9,7 +8,7 @@ const seededRandom = (seed) => {
 };
 
 const generateSeed = () => {
-  const rand = seededRandom(261105); // Semilla fija - cambiar para generar datos distintos
+  const rand = seededRandom(261105);
 
   // --- PLAN DE CUENTAS (65 cuentas) ---
   const accounts = [];
@@ -17,7 +16,7 @@ const generateSeed = () => {
     'Caja', 'Banco', 'Deudores por ventas', 'Stock de trigo',
     'Producción en proceso', 'Stock de harinas', 'Stock de subproductos',
     'Stock de raciones', 'Molino y cilindros', 'Camión de reparto',
-    'Anticipos de retorno a socios', 'IVA crédito fiscal', 'Seguro pagado por adelantado'
+    'Anticipos de retorno a socios', 'IVA crédito fiscal'
   ];
   const passives = [
     'Proveedores de trigo', 'Capital social', 'Reserva legal',
@@ -47,7 +46,7 @@ const generateSeed = () => {
     { id: 'PMER', name: 'Merma', yield: 0.04, price: 0 }
   ];
 
-  // --- OTROS PRODUCTOS (costo directo, sin costeo conjunto) ---
+  // --- OTROS PRODUCTOS (costo directo) ---
   const otherProducts = [
     { id: 'OP01', name: 'Harina de maíz' },
     { id: 'OP02', name: 'Polenta' },
@@ -72,11 +71,9 @@ const generateSeed = () => {
   }));
 
   // --- SOCIOS (33) con control de horas ---
-  // Cada socio: 184h base + hasta 24h extra (aprobadas por consejo)
-  // Distribución de horas nocturnas: ~1/3 con 40h, ~1/3 con 20h, ~1/3 sin nocturnas
   const partners = Array.from({ length: 33 }, (_, i) => {
     const baseHours = 184;
-    const extraHours = i < 5 ? 24 : 0; // Primeros 5 socios tienen horas extra aprobadas
+    const extraHours = i < 5 ? 24 : 0;
     const nightPattern = i % 3;
     const nightHours = nightPattern === 0 ? 40 : nightPattern === 1 ? 20 : 0;
     const dayHours = baseHours + extraHours - nightHours;
@@ -95,18 +92,18 @@ const generateSeed = () => {
   });
 
   // --- EMPLEADOS NO SOCIOS (12) ---
-  // Reciben sueldo fijo, no participan del excedente
+  // Sueldos van a "Sueldos y jornales" (R007), NO a "Anticipos de retorno"
+  // NO participan del excedente
   const employeeRoles = ['Operario de molino', 'Chofer de reparto', 'Administrativo', 'Encargado de embolsado'];
   const employees = Array.from({ length: 12 }, (_, i) => ({
     id: `E${String(i + 1).padStart(3, '0')}`,
     name: `Empleado ${String(i + 1).padStart(2, '0')}`,
     role: employeeRoles[i % 4],
-    monthlySalary: 4500000 + Math.floor(rand() * 500000), // Entre $U 45.000 y $U 50.000
+    monthlySalary: 4500000 + Math.floor(rand() * 500000),
     isPartner: false
   }));
 
-  // --- GENERADOR DE DATOS HISTÓRICOS ---
-  // 7 meses de actividad: ~90 moliendas, ~260 asientos, 6 meses cerrados
+  // --- GENERADOR DE DATOS HISTÓRICOS (7 meses) ---
   const entries = [];
   const millings = [];
   const closedMonths = [];
@@ -122,29 +119,25 @@ const generateSeed = () => {
     const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
     const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
 
-    // ~13 moliendas por mes (91 en 7 meses)
-    const millingsThisMonth = 13;
-    for (let ml = 0; ml < millingsThisMonth; ml++) {
-      const day = Math.min(1 + Math.floor((daysInMonth - 1) * ml / millingsThisMonth), daysInMonth);
+    // ~13 moliendas por mes
+    for (let ml = 0; ml < 13; ml++) {
+      const day = Math.min(1 + Math.floor((daysInMonth - 1) * ml / 13), daysInMonth);
       const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const shift = ml % 3 === 0 ? 'Mañana' : ml % 3 === 1 ? 'Tarde' : 'Noche';
       
       const kgIn = 12000;
-      const wheatCost = kgIn * 1140; // 13.680.000 centésimos
-      const energyCost = kgIn * 85;  // 1.020.000 centésimos
-      const totalCost = wheatCost + energyCost; // 14.700.000 centésimos
+      const wheatCost = kgIn * 1140;
+      const energyCost = kgIn * 85;
+      const totalCost = wheatCost + energyCost;
 
-      // Calcular kilos de salida por producto
       const productsOut = products.map((p, idx) => {
         let kgs = Math.round(kgIn * p.yield);
-        // Ajuste del último producto para que la suma sea exacta
         if (idx === products.length - 1) {
           kgs = kgIn - products.slice(0, idx).reduce((s, x) => s + Math.round(kgIn * x.yield), 0);
         }
         return { ...p, kgs, val: kgs * p.price };
       });
 
-      // Asignación de costos por valor de venta relativo
       const sumValue = productsOut.reduce((s, p) => s + p.val, 0);
       let assignedCost = 0;
       const maxValProd = productsOut.reduce((max, p) => p.val > max.val ? p : max, productsOut[0]);
@@ -152,7 +145,7 @@ const generateSeed = () => {
       productsOut.forEach(p => {
         if (p.id === 'PMER') { p.cost = 0; p.costPerKg = 0; return; }
         if (p === maxValProd) {
-          p.cost = totalCost - assignedCost; // El mayor valor absorbe el redondeo
+          p.cost = totalCost - assignedCost;
         } else {
           p.cost = Math.floor((totalCost * p.val) / sumValue);
           assignedCost += p.cost;
@@ -160,23 +153,15 @@ const generateSeed = () => {
         p.costPerKg = p.kgs > 0 ? Math.floor((p.cost / p.kgs) * 100) / 100 : 0;
       });
 
-      const milling = {
+      millings.push({
         id: `M${String(millingCounter++).padStart(3, '0')}`,
-        date,
-        shift,
-        kgIn,
-        wheatCost,
-        energyCost,
-        totalCost,
-        productsOut
-      };
-      millings.push(milling);
+        date, shift, kgIn, wheatCost, energyCost, totalCost, productsOut
+      });
 
-      // Asiento contable de producción terminada por cada molienda
       entries.push({
         id: `E${String(entryCounter++).padStart(3, '0')}`,
         date,
-        description: `Producción molienda ${milling.id} - Turno ${shift}`,
+        description: `Producción molienda ${millingCounter - 1} - Turno ${shift}`,
         lines: [
           { account: 'A005', debit: totalCost, credit: 0, memo: 'Producción en proceso' },
           { account: 'A004', debit: 0, credit: wheatCost, memo: 'Stock de trigo' },
@@ -186,11 +171,11 @@ const generateSeed = () => {
       });
     }
 
-    // Asientos de ventas (~8 por mes)
+    // Ventas (~8 por mes)
     for (let v = 0; v < 8; v++) {
       const day = Math.min(1 + Math.floor((daysInMonth - 1) * v / 8), daysInMonth);
       const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const amount = 5000000 + Math.floor(rand() * 10000000); // Entre $U 50.000 y $U 150.000
+      const amount = 5000000 + Math.floor(rand() * 10000000);
       entries.push({
         id: `E${String(entryCounter++).padStart(3, '0')}`,
         date,
@@ -203,11 +188,11 @@ const generateSeed = () => {
       });
     }
 
-    // Asientos de compra de trigo (~5 por mes)
+    // Compras de trigo (~5 por mes)
     for (let c = 0; c < 5; c++) {
       const day = Math.min(1 + Math.floor((daysInMonth - 1) * c / 5), daysInMonth);
       const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const amount = 15000000 + Math.floor(rand() * 5000000); // Entre $U 150.000 y $U 200.000
+      const amount = 15000000 + Math.floor(rand() * 5000000);
       entries.push({
         id: `E${String(entryCounter++).padStart(3, '0')}`,
         date,
@@ -220,11 +205,12 @@ const generateSeed = () => {
       });
     }
 
-    // Asiento de anticipos a socios (día 8 del mes, excepto el primer mes)
+    // Anticipos a SOCIOS (día 8) - SOLO socios, NO empleados
     if (m > 0) {
       const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-08`;
       let totalAdvances = 0;
       partners.forEach(p => {
+        // Fórmula: horas diurnas × valor hora + horas nocturnas × valor hora × 1,20
         const advance = (p.dayHours * 25000) + (p.nightHours * 25000 * 1.2);
         totalAdvances += Math.round(advance);
       });
@@ -240,12 +226,12 @@ const generateSeed = () => {
       });
     }
 
-    // Asiento de sueldos empleados (1 por mes, día 28)
+    // Sueldos de EMPLEADOS (día 28) - Van a "Sueldos y jornales" (R007), NO a anticipos
     const totalSalaries = employees.reduce((s, e) => s + e.monthlySalary, 0);
     entries.push({
       id: `E${String(entryCounter++).padStart(3, '0')}`,
       date: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-28`,
-      description: 'Sueldos y jornales del mes',
+      description: 'Sueldos y jornales del mes - Empleados no socios',
       lines: [
         { account: 'R007', debit: totalSalaries, credit: 0, memo: 'Sueldos y jornales' },
         { account: 'P006', debit: 0, credit: totalSalaries, memo: 'Sueldos a pagar' }
@@ -253,36 +239,48 @@ const generateSeed = () => {
       confirmed: true
     });
 
-    // Asiento de servicio de carga y descarga (1 por mes)
-    const cargoCost = 2500000 + Math.floor(rand() * 1000000);
-    entries.push({
-      id: `E${String(entryCounter++).padStart(3, '0')}`,
-      date: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-15`,
-      description: 'Servicio de carga y descarga - Cooperativa',
-      lines: [
-        { account: 'R005', debit: cargoCost, credit: 0, memo: 'Servicio de carga y descarga' },
-        { account: 'P001', debit: 0, credit: cargoCost, memo: 'Proveedores' }
-      ],
-      confirmed: true
-    });
+    // Cierre de mes (refundición, distribución, apertura) - último día del mes
+    if (m < 6) {
+      const lastDay = daysInMonth;
+      const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      
+      // Simulación de distribución del excedente (datos de ejemplo, no norma uruguaya)
+      const simulatedExcess = 50000000; // $U 500.000,00
+      const reserva = Math.floor(simulatedExcess * 0.20);
+      const educacion = Math.floor(simulatedExcess * 0.05);
+      const retorno = simulatedExcess - reserva - educacion;
+      
+      entries.push({
+        id: `E${String(entryCounter++).padStart(3, '0')}`,
+        date,
+        description: `Cierre mes ${monthKey} - Distribución excedente (simulado)`,
+        lines: [
+          { account: 'R001', debit: retorno, credit: 0, memo: 'Retorno a socios' },
+          { account: 'A011', debit: 0, credit: retorno, memo: 'Anticipos de retorno a socios' }
+        ],
+        confirmed: true,
+        isClosing: true
+      });
 
-    // Marcar los primeros 6 meses como cerrados
-    if (m < 6) closedMonths.push(monthKey);
+      // Apertura del mes siguiente
+      const nextMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
+      const nextDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
+      entries.push({
+        id: `E${String(entryCounter++).padStart(3, '0')}`,
+        date: nextDate,
+        description: `Apertura mes ${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`,
+        lines: [
+          { account: 'A001', debit: 25000000, credit: 0, memo: 'Caja' },
+          { account: 'A002', debit: 180000000, credit: 0, memo: 'Banco' },
+          { account: 'P002', debit: 0, credit: 205000000, memo: 'Capital social' }
+        ],
+        confirmed: true,
+        isOpening: true
+      });
+
+      closedMonths.push(monthKey);
+    }
   }
-
-  // Asiento de apertura del mes actual (mes 7)
-  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  entries.push({
-    id: `E${String(entryCounter++).padStart(3, '0')}`,
-    date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`,
-    description: 'Asiento de apertura del ejercicio',
-    lines: [
-      { account: 'A001', debit: 25000000, credit: 0, memo: 'Caja' },
-      { account: 'A002', debit: 180000000, credit: 0, memo: 'Banco' },
-      { account: 'P002', debit: 0, credit: 205000000, memo: 'Capital social' }
-    ],
-    confirmed: true
-  });
 
   return {
     accounts,
@@ -294,13 +292,12 @@ const generateSeed = () => {
     entries,
     millings,
     closedMonths,
-    currentMonth: currentMonthKey,
     settings: {
-      wheatPrice: 1140,        // $U 11,40/kg en centésimos
-      energyCost: 85,          // $U 0,85/kg en centésimos
-      nightSurcharge: 1.2,     // Recargo nocturno
-      hourValue: 25000,        // $U 250,00/hora en centésimos
-      shiftQuota: 12000        // Cupo por turno en kg
+      wheatPrice: 1140,
+      energyCost: 85,
+      nightSurcharge: 1.2,
+      hourValue: 25000,
+      shiftQuota: 12000
     }
   };
 };
