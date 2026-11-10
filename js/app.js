@@ -10,8 +10,6 @@ const useLocalState = (key, init) => {
   return [state, setState];
 };
 
-const formatMoney = (cents) => `$U ${(cents / 100).toFixed(2)}`;
-
 const Tabs = ({ current, set }) => {
   const tabs = ['Dashboard', 'Asientos', 'Moliendas', 'Socios', 'Empleados', 'Distribución', 'Reportes', 'Admin'];
   return (
@@ -67,14 +65,10 @@ const Admin = ({ data, setData }) => {
       <div className="bg-white p-4 rounded border border-beige space-y-2">
         <h3 className="font-bold text-sm">Configuración</h3>
         <p className="text-xs text-darkGold">Clave actual: <strong>molino2026</strong></p>
-        <p className="text-xs text-darkGold">Para cambiarla, edite <code>ADMIN_PASSWORD</code> en <code>js/app.js</code></p>
       </div>
-      <div className="bg-white p-4 rounded border border-beige space-y-2">
-        <h3 className="font-bold text-sm">Gestión de datos</h3>
-        <button onClick={resetData} className="w-full py-2 bg-red text-white rounded font-semibold">
-          Reiniciar datos semilla
-        </button>
-      </div>
+      <button onClick={resetData} className="w-full py-2 bg-red text-white rounded font-semibold">
+        Reiniciar datos semilla
+      </button>
     </div>
   );
 };
@@ -99,21 +93,12 @@ const Dashboard = ({ data }) => (
         <p className="text-xs text-darkGold">Socios</p>
         <p className="text-2xl font-bold">{data.partners.length}</p>
       </div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-beige">
-        <p className="text-xs text-darkGold">Empleados</p>
-        <p className="text-2xl font-bold">{data.employees.length}</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-beige">
-        <p className="text-xs text-darkGold">Meses cerrados</p>
-        <p className="text-2xl font-bold">{data.closedMonths.length}</p>
-      </div>
     </div>
   </div>
 );
 
 const Asientos = ({ data, setData }) => {
   const [lines, setLines] = useState([{account:'', debit:0, credit:0}]);
-  const addLine = () => setLines([...lines, {account:'', debit:0, credit:0}]);
   
   const saveEntry = () => {
     const totalD = lines.reduce((s,l) => s + Number(l.debit||0), 0);
@@ -123,14 +108,6 @@ const Asientos = ({ data, setData }) => {
     const newEntry = { id: `E${data.entries.length + 1}`, date: new Date().toISOString().split('T')[0], lines: [...lines], confirmed: true };
     setData({ ...data, entries: [...data.entries, newEntry] });
     setLines([{account:'', debit:0, credit:0}]);
-  };
-
-  const revertEntry = (entryId) => {
-    const entry = data.entries.find(e => e.id === entryId);
-    if(!entry) return;
-    const contraLines = entry.lines.map(l => ({account: l.account, debit: l.credit, credit: l.debit}));
-    const contraEntry = { id: `E${data.entries.length + 1}`, date: new Date().toISOString().split('T')[0], lines: contraLines, confirmed: true, revertedFrom: entryId };
-    setData({ ...data, entries: [...data.entries, contraEntry] });
   };
 
   return (
@@ -149,20 +126,8 @@ const Asientos = ({ data, setData }) => {
         ))}
       </div>
       <div className="flex gap-2">
-        <button onClick={addLine} className="px-4 py-2 bg-beige text-dark text-sm rounded font-semibold">+ Línea</button>
+        <button onClick={() => setLines([...lines, {account:'', debit:0, credit:0}])} className="px-4 py-2 bg-beige text-dark text-sm rounded font-semibold">+ Línea</button>
         <button onClick={saveEntry} className="px-4 py-2 bg-gold text-white text-sm rounded font-semibold">Confirmar</button>
-      </div>
-      <div className="mt-4 space-y-2">
-        <h3 className="font-bold">Historial (Inmutable)</h3>
-        {data.entries.map(e => (
-          <div key={e.id} className="bg-white p-3 rounded border border-beige text-sm">
-            <div className="flex justify-between items-center">
-              <p className="font-semibold">{e.id} - {e.date} {e.revertedFrom && <span className="text-red text-xs">(Reversión de {e.revertedFrom})</span>}</p>
-              {!e.revertedFrom && <button onClick={() => revertEntry(e.id)} className="text-xs text-red underline">Revertir</button>}
-            </div>
-            {e.lines.map((l,i) => <p key={i} className="text-xs text-darkGold"> {l.account} | D: {l.debit} | H: {l.credit}</p>)}
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -172,29 +137,22 @@ const Moliendas = ({ data, setData }) => {
   const [kg, setKg] = useState(12000);
   
   const processMilling = () => {
+    const totalCost = (kg * data.settings.wheatPrice) + (kg * data.settings.energyCost);
     let productsOut = [];
     let sumValue = 0;
-    let maxValProd = null;
     let sumKgOut = 0;
     
     data.products.forEach((p, index) => {
       let kgs = Math.round(kg * p.yield);
-      if (index === data.products.length - 1) {
-        kgs = kg - sumKgOut;
-      }
+      if (index === data.products.length - 1) kgs = kg - sumKgOut;
       sumKgOut += kgs;
       const val = kgs * p.price;
       sumValue += val;
       productsOut.push({ ...p, kgs, val });
-      if(p.price > 0 && (!maxValProd || val > maxValProd.val)) maxValProd = productsOut[productsOut.length - 1];
     });
 
-    if (sumKgOut !== kg) {
-      return alert(`Error: Los kilos de salida (${sumKgOut}) difieren de los ingresados (${kg}).`);
-    }
-
-    const totalCost = (kg * data.settings.wheatPrice) + (kg * data.settings.energyCost);
     let assignedCost = 0;
+    const maxValProd = productsOut.reduce((max, p) => p.val > max.val ? p : max, productsOut[0]);
     
     productsOut.forEach(p => {
       if(p.id === 'PMER') { p.cost = 0; p.costPerKg = 0; return; }
@@ -219,24 +177,12 @@ const Moliendas = ({ data, setData }) => {
         <input type="number" value={kg} onChange={e => setKg(Number(e.target.value))} className="w-full p-2 border rounded" />
         <button onClick={processMilling} className="w-full py-2 bg-green text-white rounded font-semibold">Procesar</button>
       </div>
-      <div className="space-y-4">
-        {data.millings.slice().reverse().map(m => (
-          <div key={m.id} className="bg-white p-4 rounded border border-beige">
-            <h3 className="font-bold text-gold">{m.id} | {m.date}</h3>
-            <p className="text-sm">Ingreso: {m.kgIn} kg | Costo Total: {formatMoney(m.totalCost)}</p>
-            <table className="w-full mt-2 text-xs">
-              <thead><tr className="text-left text-darkGold border-b"><th>Producto</th><th>Kg</th><th>Costo</th><th>$/Kg</th></tr></thead>
-              <tbody>
-                {m.productsOut.map(p => (
-                  <tr key={p.id} className="border-t border-beige">
-                    <td>{p.name}</td><td>{p.kgs}</td><td>{formatMoney(p.cost)}</td><td>{formatMoney(p.costPerKg * 100)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
-      </div>
+      {data.millings.slice().reverse().map(m => (
+        <div key={m.id} className="bg-white p-4 rounded border border-beige">
+          <h3 className="font-bold text-gold">{m.id} | {m.date}</h3>
+          <p className="text-sm">Ingreso: {m.kgIn} kg | Costo Total: {formatMoney(m.totalCost)}</p>
+        </div>
+      ))}
     </div>
   );
 };
@@ -244,7 +190,6 @@ const Moliendas = ({ data, setData }) => {
 const Socios = ({ data, setData }) => {
   const payAdvances = () => {
     const updated = data.partners.map(p => {
-      // Fórmula del encargo: horas diurnas × valor hora + horas nocturnas × valor hora × 1,20
       const dayAdvance = p.dayHours * data.settings.hourValue;
       const nightAdvance = p.nightHours * data.settings.hourValue * data.settings.nightSurcharge;
       return { ...p, advances: p.advances + Math.round(dayAdvance + nightAdvance) };
@@ -254,17 +199,14 @@ const Socios = ({ data, setData }) => {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-xl font-bold">Socios - Anticipos de Retorno</h2>
-      <p className="text-xs text-darkGold">Fórmula: horas diurnas × valor hora + horas nocturnas × valor hora × 1,20</p>
+      <h2 className="text-xl font-bold">Socios - Anticipos</h2>
       <button onClick={payAdvances} className="w-full py-2 bg-gold text-white rounded font-semibold">Pagar Anticipos</button>
-      <div className="space-y-2">
-        {data.partners.map(p => (
-          <div key={p.id} className="bg-white p-3 rounded border border-beige flex justify-between items-center text-sm">
-            <div><p className="font-semibold">{p.name}</p><p className="text-xs text-darkGold">Día: {p.dayHours}h | Noche: {p.nightHours}h</p></div>
-            <p className="font-bold text-green">{formatMoney(p.advances)}</p>
-          </div>
-        ))}
-      </div>
+      {data.partners.map(p => (
+        <div key={p.id} className="bg-white p-3 rounded border border-beige flex justify-between items-center text-sm">
+          <div><p className="font-semibold">{p.name}</p><p className="text-xs text-darkGold">Día: {p.dayHours}h | Noche: {p.nightHours}h</p></div>
+          <p className="font-bold text-green">{formatMoney(p.advances)}</p>
+        </div>
+      ))}
     </div>
   );
 };
@@ -272,18 +214,13 @@ const Socios = ({ data, setData }) => {
 const Empleados = ({ data }) => (
   <div className="p-4 space-y-4">
     <h2 className="text-xl font-bold">Empleados No Socios</h2>
-    <p className="text-xs text-darkGold">Los sueldos se registran en "Sueldos y jornales" (R007), NO en "Anticipos de retorno". No participan del excedente.</p>
-    <div className="space-y-2">
-      {data.employees.map(e => (
-        <div key={e.id} className="bg-white p-3 rounded border border-beige flex justify-between items-center text-sm">
-          <div>
-            <p className="font-semibold">{e.name}</p>
-            <p className="text-xs text-darkGold">{e.role}</p>
-          </div>
-          <p className="font-bold text-dark">{formatMoney(e.monthlySalary)}</p>
-        </div>
-      ))}
-    </div>
+    <p className="text-xs text-darkGold">Los sueldos se registran en "Sueldos y jornales", NO en "Anticipos de retorno". No participan del excedente.</p>
+    {data.employees && data.employees.map(e => (
+      <div key={e.id} className="bg-white p-3 rounded border border-beige text-sm">
+        <p className="font-semibold">{e.name}</p>
+        <p className="text-xs text-darkGold">Sueldo: {formatMoney(e.monthlySalary)}</p>
+      </div>
+    ))}
   </div>
 );
 
@@ -291,12 +228,9 @@ const Distribucion = ({ data, setData }) => {
   const [excedente, setExcedente] = useState(50000000);
   
   const simulate = () => {
-    // Datos de ejemplo configurables - NO es norma uruguaya ni asesoramiento
     const reserva = Math.floor(excedente * 0.20);
     const educacion = Math.floor(excedente * 0.05);
     const retornoTotal = excedente - reserva - educacion;
-    
-    // Solo socios participan del excedente
     const totalHours = data.partners.reduce((sum, p) => sum + p.dayHours + p.nightHours, 0);
     const valorHora = Math.floor(retornoTotal / totalHours);
     
@@ -304,12 +238,9 @@ const Distribucion = ({ data, setData }) => {
     const results = data.partners.map((p, index) => {
       const hours = p.dayHours + p.nightHours;
       let amount = hours * valorHora;
-      if (index === data.partners.length - 1) {
-        amount = retornoTotal - distributed;
-      }
+      if (index === data.partners.length - 1) amount = retornoTotal - distributed;
       distributed += amount;
-      const finalReturn = Math.max(0, amount - p.advances);
-      return { ...p, hours, amount, finalReturn };
+      return { ...p, hours, finalReturn: Math.max(0, amount - p.advances) };
     });
 
     setData({ ...data, distribution: { reserva, educacion, retornoTotal, results } });
@@ -318,25 +249,14 @@ const Distribucion = ({ data, setData }) => {
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">Distribución de Excedente</h2>
-      <p className="text-xs text-darkGold">⚠️ Datos de ejemplo configurables. NO es la norma uruguaya ni asesoramiento contable. Los valida un contador.</p>
-      <p className="text-xs text-darkGold">Solo socios participan. Empleados no socios NO reciben excedente.</p>
-      <div className="bg-white p-4 rounded border border-beige space-y-2">
-        <label className="text-sm font-semibold">Excedente (centésimos)</label>
-        <input type="number" value={excedente} onChange={e => setExcedente(Number(e.target.value))} className="w-full p-2 border rounded" />
-        <button onClick={simulate} className="w-full py-2 bg-green text-white rounded font-semibold">Simular Distribución</button>
-      </div>
+      <p className="text-xs text-darkGold">⚠️ Datos de ejemplo. NO es norma uruguaya. Valida un contador.</p>
+      <input type="number" value={excedente} onChange={e => setExcedente(Number(e.target.value))} className="w-full p-2 border rounded" />
+      <button onClick={simulate} className="w-full py-2 bg-green text-white rounded font-semibold">Simular</button>
       {data.distribution && (
-        <div className="bg-white p-4 rounded border border-beige space-y-2">
-          <p className="text-sm">Reserva Legal (20%): {formatMoney(data.distribution.reserva)}</p>
-          <p className="text-sm">Fondo Educación (5%): {formatMoney(data.distribution.educacion)}</p>
-          <p className="text-sm font-bold">Retorno a Socios (75%): {formatMoney(data.distribution.retornoTotal)}</p>
-          <hr className="border-beige"/>
-          {data.distribution.results.map(r => (
-            <div key={r.id} className="flex justify-between text-sm">
-              <span>{r.name} ({r.hours}h)</span>
-              <span className="font-bold text-green">{formatMoney(r.finalReturn)}</span>
-            </div>
-          ))}
+        <div className="bg-white p-4 rounded border border-beige mt-2">
+          <p>Reserva (20%): {formatMoney(data.distribution.reserva)}</p>
+          <p>Educación (5%): {formatMoney(data.distribution.educacion)}</p>
+          <p className="font-bold">Retorno (75%): {formatMoney(data.distribution.retornoTotal)}</p>
         </div>
       )}
     </div>
