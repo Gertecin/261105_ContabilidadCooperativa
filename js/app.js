@@ -10,8 +10,10 @@ const useLocalState = (key, init) => {
   return [state, setState];
 };
 
+const formatMoney = (cents) => `$U ${(cents / 100).toFixed(2)}`;
+
 const Tabs = ({ current, set }) => {
-  const tabs = ['Dashboard', 'Asientos', 'Moliendas', 'Socios', 'Distribución', 'Reportes', 'Admin'];
+  const tabs = ['Dashboard', 'Asientos', 'Moliendas', 'Socios', 'Empleados', 'Distribución', 'Reportes', 'Admin'];
   return (
     <div className="flex overflow-x-auto bg-white border-b border-beige sticky top-0 z-10">
       {tabs.map(t => (
@@ -97,10 +99,14 @@ const Dashboard = ({ data }) => (
         <p className="text-xs text-darkGold">Socios</p>
         <p className="text-2xl font-bold">{data.partners.length}</p>
       </div>
-    </div>
-    <div className="bg-green/10 p-4 rounded-lg border border-green/30">
-      <h3 className="font-bold text-green">Estado Operativo</h3>
-      <p className="text-sm mt-1">Sistema en línea. Datos persistidos en localStorage.</p>
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-beige">
+        <p className="text-xs text-darkGold">Empleados</p>
+        <p className="text-2xl font-bold">{data.employees.length}</p>
+      </div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-beige">
+        <p className="text-xs text-darkGold">Meses cerrados</p>
+        <p className="text-2xl font-bold">{data.closedMonths.length}</p>
+      </div>
     </div>
   </div>
 );
@@ -238,6 +244,7 @@ const Moliendas = ({ data, setData }) => {
 const Socios = ({ data, setData }) => {
   const payAdvances = () => {
     const updated = data.partners.map(p => {
+      // Fórmula del encargo: horas diurnas × valor hora + horas nocturnas × valor hora × 1,20
       const dayAdvance = p.dayHours * data.settings.hourValue;
       const nightAdvance = p.nightHours * data.settings.hourValue * data.settings.nightSurcharge;
       return { ...p, advances: p.advances + Math.round(dayAdvance + nightAdvance) };
@@ -247,7 +254,8 @@ const Socios = ({ data, setData }) => {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-xl font-bold">Anticipos</h2>
+      <h2 className="text-xl font-bold">Socios - Anticipos de Retorno</h2>
+      <p className="text-xs text-darkGold">Fórmula: horas diurnas × valor hora + horas nocturnas × valor hora × 1,20</p>
       <button onClick={payAdvances} className="w-full py-2 bg-gold text-white rounded font-semibold">Pagar Anticipos</button>
       <div className="space-y-2">
         {data.partners.map(p => (
@@ -261,13 +269,34 @@ const Socios = ({ data, setData }) => {
   );
 };
 
+const Empleados = ({ data }) => (
+  <div className="p-4 space-y-4">
+    <h2 className="text-xl font-bold">Empleados No Socios</h2>
+    <p className="text-xs text-darkGold">Los sueldos se registran en "Sueldos y jornales" (R007), NO en "Anticipos de retorno". No participan del excedente.</p>
+    <div className="space-y-2">
+      {data.employees.map(e => (
+        <div key={e.id} className="bg-white p-3 rounded border border-beige flex justify-between items-center text-sm">
+          <div>
+            <p className="font-semibold">{e.name}</p>
+            <p className="text-xs text-darkGold">{e.role}</p>
+          </div>
+          <p className="font-bold text-dark">{formatMoney(e.monthlySalary)}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const Distribucion = ({ data, setData }) => {
   const [excedente, setExcedente] = useState(50000000);
   
   const simulate = () => {
+    // Datos de ejemplo configurables - NO es norma uruguaya ni asesoramiento
     const reserva = Math.floor(excedente * 0.20);
     const educacion = Math.floor(excedente * 0.05);
     const retornoTotal = excedente - reserva - educacion;
+    
+    // Solo socios participan del excedente
     const totalHours = data.partners.reduce((sum, p) => sum + p.dayHours + p.nightHours, 0);
     const valorHora = Math.floor(retornoTotal / totalHours);
     
@@ -289,6 +318,8 @@ const Distribucion = ({ data, setData }) => {
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">Distribución de Excedente</h2>
+      <p className="text-xs text-darkGold">⚠️ Datos de ejemplo configurables. NO es la norma uruguaya ni asesoramiento contable. Los valida un contador.</p>
+      <p className="text-xs text-darkGold">Solo socios participan. Empleados no socios NO reciben excedente.</p>
       <div className="bg-white p-4 rounded border border-beige space-y-2">
         <label className="text-sm font-semibold">Excedente (centésimos)</label>
         <input type="number" value={excedente} onChange={e => setExcedente(Number(e.target.value))} className="w-full p-2 border rounded" />
@@ -358,6 +389,7 @@ const App = () => {
         {tab === 'Asientos' && <Asientos data={data} setData={setData} />}
         {tab === 'Moliendas' && <Moliendas data={data} setData={setData} />}
         {tab === 'Socios' && <Socios data={data} setData={setData} />}
+        {tab === 'Empleados' && <Empleados data={data} />}
         {tab === 'Distribución' && <Distribucion data={data} setData={setData} />}
         {tab === 'Reportes' && <Reportes data={data} />}
         {tab === 'Login' && !isAuthenticated && (
