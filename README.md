@@ -159,5 +159,38 @@ La aplicación incluye un botón **"Reset"** en el panel de administración que:
 - ✅ **Cierre de mes implementado:** refundición, distribución simulada y apertura
 - ✅ **Aclaración del contador:** datos de ejemplo, no norma uruguaya, valida contador
 
+
+  
+## 📋 Guía de Uso - Contabilidad Molino Florida
+1. Conceptos Básicos
+Moneda: Todos los montos se manejan en centésimos de peso uruguayo ($U 1 = 100 centésimos) para evitar errores de redondeo. La interfaz los muestra formateados (ej. $U 14.256,00).
+Persistencia: Los datos se guardan automáticamente en tu navegador (localStorage). Si recargas la página, la información sigue ahí.
+Datos de ejemplo: La app arranca con 7 meses de actividad simulada. Puedes borrarla desde el panel de administración.
+2. Navegación y Acceso
+Navegación libre: Puedes explorar Dashboard, Asientos, Moliendas, Socios, Empleados, Distribución y Reportes sin restricciones.
+Panel de Administración: La pestaña "🔒 Admin" está bloqueada. Requiere la clave de acceso (por defecto: molino2026). Aquí puedes reiniciar los datos a su estado original.
+3. Módulo por Módulo
+📝 Asientos (Partida Doble)
+Crear: Selecciona las cuentas, ingresa los montos en "Debe" y "Haber".
+Regla de oro: El asiento solo se guardará si el Debe es exactamente igual al Haber y mayor a cero.
+Inmutabilidad: Un asiento confirmado no se puede editar ni borrar. Si te equivocas, debes usar el botón "Revertir", lo que genera automáticamente un contraasiento vinculado que deja el saldo en cero.
+🌾 Moliendas (Costeo Conjunto)
+Registrar: Ingresa los kilos de trigo y haz clic en "Procesar".
+Validación: El sistema calcula automáticamente los kilos de salida por producto según los rendimientos. La suma de kilos de salida + merma debe ser exactamente igual a los kilos ingresados.
+Costeo: El costo total (trigo + energía) se reparte entre los productos según su valor de venta relativo. La merma no absorbe costo y el redondeo va al producto de mayor valor (Harina 000).
+👷 Socios y Empleados
+Socios: Reciben "Anticipos de retorno". El cálculo es: (Horas diurnas × valor hora) + (Horas nocturnas × valor hora × 1,20). Solo los socios participan del excedente.
+Empleados no socios: Tienen sueldo fijo. Sus pagos van a la cuenta "Sueldos y jornales", no a anticipos, y no reciben reparto de excedente.
+📊 Distribución de Excedente
+Simulador: Ingresa el monto del excedente total y pulsa "Simular".
+Reparto: Se aplica automáticamente: 20% Reserva Legal, 5% Fondo Educación, 75% Retorno a socios (proporcional a sus horas, descontando anticipos). El redondeo al centésimo lo absorbe el último socio.
+Nota: Estos porcentajes son datos de ejemplo y deben ser validados por un contador matriculado.
+📈 Reportes
+Muestra el balance general. Verifica que la Suma Debe sea igual a la Suma Haber y que los saldos deudores equilibren a los acreedores.
+4. Reglas de Oro (Para la Asamblea)
+Transparencia: Cada botón y tabla muestra datos reales de la operación, sin texto de relleno.
+Trazabilidad: Nunca se pierde un asiento; si se corrige, queda el rastro de la reversión.
+Costeo justo: El salvado y el germen no "comen" costo de la harina panadera; cada producto paga lo que le corresponde por su valor de mercado.
+
 ## 🔄 Reiniciar datos
 Botón "Reset" en el panel de administración (requiere login con clave `molino2026`).
