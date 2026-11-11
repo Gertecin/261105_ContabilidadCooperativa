@@ -54,7 +54,7 @@ const Dashboard = ({ data }) => (
       <div className="bg-white p-4 rounded-lg shadow-sm border border-beige"><p className="text-xs text-darkGold">Cuentas</p><p className="text-2xl font-bold">{data.accounts.length}</p></div>
       <div className="bg-white p-4 rounded-lg shadow-sm border border-beige"><p className="text-xs text-darkGold">Asientos</p><p className="text-2xl font-bold">{data.entries.length}</p></div>
       <div className="bg-white p-4 rounded-lg shadow-sm border border-beige"><p className="text-xs text-darkGold">Moliendas</p><p className="text-2xl font-bold">{data.millings.length}</p></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-beige"><p className="text-xs text-darkGold">Meses cerrados</p><p className="text-2xl font-bold">{data.closedMonths.length}</p></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-beige"><p className="text-xs text-darkGold">Socios</p><p className="text-2xl font-bold">{data.partners.length}</p></div>
     </div>
   </div>
 );
@@ -68,8 +68,7 @@ const Asientos = ({ data, setData }) => {
     const totalD = lines.reduce((s, l) => s + Number(l.debit || 0), 0);
     const totalC = lines.reduce((s, l) => s + Number(l.credit || 0), 0);
     if (totalD !== totalC || totalD === 0) return alert(`Desbalanceado. Debe: ${totalD}, Haber: ${totalC}`);
-    if (data.closedMonths.includes(getMonthKey(date))) return alert(`Mes ${getMonthKey(date)} cerrado.`);
-    
+    if (data.closedMonths && data.closedMonths.includes(getMonthKey(date))) return alert(`Mes ${getMonthKey(date)} cerrado.`);
     const newEntry = { id: `E${String(data.entries.length + 1).padStart(3, '0')}`, date, description, lines: lines.map(l => ({ ...l, debit: Number(l.debit || 0), credit: Number(l.credit || 0) })), confirmed: true };
     setData({ ...data, entries: [...data.entries, newEntry] });
     setLines([{ account: '', debit: 0, credit: 0, memo: '' }]);
@@ -79,9 +78,8 @@ const Asientos = ({ data, setData }) => {
   const revertEntry = (entryId) => {
     const entry = data.entries.find(e => e.id === entryId);
     if (!entry) return;
-    if (data.closedMonths.includes(getMonthKey(entry.date))) return alert('Mes cerrado, no se puede revertir.');
+    if (data.closedMonths && data.closedMonths.includes(getMonthKey(entry.date))) return alert('Mes cerrado, no se puede revertir.');
     if (!confirm(`¿Revertir asiento ${entry.id}? Se generará un contraasiento.`)) return;
-    
     const contraLines = entry.lines.map(l => ({ account: l.account, debit: l.credit, credit: l.debit, memo: `Reversión de ${entry.id}` }));
     const contraEntry = { id: `E${String(data.entries.length + 1).padStart(3, '0')}`, date: new Date().toISOString().split('T')[0], description: `Reversión de ${entry.id}`, lines: contraLines, confirmed: true, revertedFrom: entryId };
     setData({ ...data, entries: [...data.entries, contraEntry] });
@@ -142,10 +140,10 @@ const Moliendas = ({ data, setData }) => {
   const processMilling = () => {
     const usedQuota = data.millings.filter(m => m.date === date && m.shift === shift).reduce((sum, m) => sum + m.kgIn, 0);
     if (usedQuota + kg > data.settings.shiftQuota) return alert(`Cupo excedido para el turno ${shift}.`);
-    if (data.closedMonths.includes(getMonthKey(date))) return alert('Mes cerrado.');
+    if (data.closedMonths && data.closedMonths.includes(getMonthKey(date))) return alert('Mes cerrado.');
     if (sumKgOut !== kg) return alert(`Los kilos de salida (${sumKgOut}) deben igualar los ingresados (${kg}).`);
 
-    const productsOut = data.products.map((p, idx) => {
+    const productsOut = data.products.map(p => {
       const kgs = productKgs.find(pk => pk.id === p.id).kgs;
       return { ...p, kgs, val: kgs * p.price };
     });
@@ -155,7 +153,7 @@ const Moliendas = ({ data, setData }) => {
 
     productsOut.forEach(p => {
       if (p.id === 'PMER') { p.cost = 0; p.costPerKg = 0; return; }
-      if (p === maxValProd) { p.cost = totalCost - assignedCost; } 
+      if (p === maxValProd) { p.cost = totalCost - assignedCost; }
       else { p.cost = Math.floor((totalCost * p.val) / sumValue); assignedCost += p.cost; }
       p.costPerKg = p.kgs > 0 ? Math.floor((p.cost / p.kgs) * 100) / 100 : 0;
     });
@@ -221,7 +219,7 @@ const LibroMayor = ({ data }) => {
   const [accId, setAccId] = useState(data.accounts[0]?.id || '');
   const [period, setPeriod] = useState('all');
   const account = data.accounts.find(a => a.id === accId);
-  
+
   const movements = useMemo(() => {
     if (!accId) return [];
     return data.entries.filter(e => period === 'all' || getMonthKey(e.date) === period)
@@ -270,7 +268,7 @@ const Balance = ({ data }) => {
   const [period, setPeriod] = useState('all');
   const balances = useMemo(() => data.accounts.map(acc => {
     let d = 0, c = 0;
-    data.entries.filter(e => period === 'all' || getMonthKey(e.date) === period).forEach(e => 
+    data.entries.filter(e => period === 'all' || getMonthKey(e.date) === period).forEach(e =>
       e.lines.filter(l => l.account === acc.id).forEach(l => { d += l.debit || 0; c += l.credit || 0; })
     );
     return { ...acc, d, c, s: d - c };
@@ -334,7 +332,7 @@ const Empleados = ({ data }) => (
   <div className="p-4 space-y-4">
     <h2 className="text-xl font-bold">Empleados No Socios</h2>
     <p className="text-xs text-darkGold">Registrados en "Sueldos y jornales". No participan del excedente.</p>
-    {data.employees.map(e => (
+    {data.employees && data.employees.map(e => (
       <div key={e.id} className="bg-white p-3 rounded border border-beige flex justify-between text-sm">
         <div><p className="font-semibold">{e.name}</p><p className="text-xs text-darkGold">{e.role}</p></div>
         <p className="font-bold">{formatMoney(e.monthlySalary)}</p>
