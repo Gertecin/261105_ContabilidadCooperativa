@@ -2,7 +2,6 @@ const { useState, useEffect, useMemo } = React;
 const ADMIN_PASSWORD = "molino2026";
 
 // --- UTILIDAD (Mantener solo aquí, NO en utils.js) ---
-const formatMoney = (cents) => `$U ${(cents / 100).toFixed(2)}`;
 const formatDate = (d) => { const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; };
 const getMonthKey = (d) => d.substring(0, 7);
 const getPeriods = (entries) => [...new Set(entries.map(e => getMonthKey(e.date)))].sort();
