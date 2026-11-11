@@ -11,7 +11,7 @@ No requiere instalación de dependencias ni backend.
 
 ## 🧪 Qué está simulado
 - **Persistencia:** `localStorage`. Todos los montos son **enteros en centésimos de peso uruguayo** ($U 1 = 100 centésimos).
-- **Datos semilla precargados:** 65 cuentas, 70 clientes, 33 socios, 12 empleados no socios, ~260 asientos, ~91 moliendas y 6 meses cerrados.
+- **Datos semilla precargados:** 65 cuentas, 70 clientes, 33 socios, 12 empleados no socios, ~260 asientos, ~91 moliendas y 7 meses cerrados.
 - **Sin servicios externos:** no hay conexión a correos, WhatsApp ni pasarelas de pago.
 - **Navegación libre:** todas las vistas son accesibles sin autenticación, excepto el panel de administración (`/admin`).
 
@@ -61,16 +61,3 @@ Esta distinción es fundamental para mantener la naturaleza jurídica cooperativ
 - **Acceso:** hacer clic en la pestaña **"🔒 Admin"** en la navegación superior.
 - **Clave demo:** `molino2026` (definida en la constante `ADMIN_PASSWORD` en `js/app.js`).
 - **Para producción:** el integrador de backend debe reemplazar esta validación frontend por un endpoint seguro (`POST /api/auth/login`) con JWT/cookies, y mover la constante `ADMIN_PASSWORD` a variables de entorno del servidor.
-
-## 📋 Criterios de revisión cumplidos
-- ✅ Asientos desbalanceados no se confirman.
-- ✅ Asientos confirmados son inmutables; revertir crea un contraasiento vinculado que deja el saldo en cero.
-- ✅ Molienda de 12.000 kg: suma de costos asignados = costo total exacto.
-- ✅ Costo por kilo de harina 000 coincide al centésimo con cálculo manual.
-- ✅ Suma de saldos deudores = suma de saldos acreedores en el balance.
-- ✅ Socio con 40h nocturnas: recargo 1,20 solo aplica a esas 40h.
-- ✅ Simulador de distribución reparte solo entre socios, al centésimo, redondeo al último.
-- ✅ Todos los montos en enteros (centésimos), persistencia al recargar.
-- ✅ Libro mayor por cuenta con saldo acumulado.
-- ✅ Balance de sumas y saldos filtrable por período.
-- ✅ Navegación libre, solo `/admin` requiere login.
