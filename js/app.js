@@ -1,6 +1,12 @@
 const { useState, useEffect, useMemo } = React;
 const ADMIN_PASSWORD = "molino2026";
 
+/const { useState, useEffect, useMemo } = React;
+const ADMIN_PASSWORD = "molino2026";
+
+// --- UTILIDAD FALTANTE (Formato de moneda) ---
+const formatMoney = (cents) => `$U ${(cents / 100).toFixed(2)}`;
+
 // --- HOOK PERSISTENCIA ---
 const useLocalState = (key, init) => {
   const [state, setState] = useState(() => {
@@ -300,19 +306,16 @@ const Moliendas = ({ data, setData }) => {
   const totalCost = (kg * wheatPrice) + (kg * data.settings.energyCost);
 
   const processMilling = () => {
-    // Validación de cupo por turno
     const usedQuota = data.millings
       .filter(m => m.date === date && m.shift === shift)
       .reduce((sum, m) => sum + m.kgIn, 0);
     if (usedQuota + kg > data.settings.shiftQuota) {
       return alert(`Cupo excedido. Turno ${shift} del ${formatDate(date)} tiene ${usedQuota} kg usados. Cupo máximo: ${data.settings.shiftQuota} kg.`);
     }
-    // Validación de mes cerrado
     const monthKey = getMonthKey(date);
     if (data.closedMonths && data.closedMonths.includes(monthKey)) {
       return alert(`El mes ${monthKey} está cerrado.`);
     }
-    // Validación de kilos
     if (sumKgOut !== kg) {
       return alert(`Los kilos de salida (${sumKgOut}) deben igualar los kilos ingresados (${kg}).`);
     }
@@ -349,7 +352,6 @@ const Moliendas = ({ data, setData }) => {
       productsOut
     };
 
-    // Asiento contable de producción terminada
     const entry = {
       id: `E${String(data.entries.length + 1).padStart(3, '0')}`,
       date,
@@ -369,7 +371,6 @@ const Moliendas = ({ data, setData }) => {
       entries: [...data.entries, entry]
     });
 
-    // Resetear formulario
     setKg(12000);
     setProductKgs(data.products.map(p => ({ id: p.id, kgs: Math.round(12000 * p.yield) })));
   };
@@ -460,7 +461,7 @@ const Moliendas = ({ data, setData }) => {
   );
 };
 
-// --- LIBRO MAYOR (por cuenta con saldo acumulado) ---
+// --- LIBRO MAYOR ---
 const LibroMayor = ({ data }) => {
   const [selectedAccount, setSelectedAccount] = useState(data.accounts[0]?.id || '');
   const [period, setPeriod] = useState('all');
