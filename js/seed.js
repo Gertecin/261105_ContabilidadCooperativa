@@ -13,7 +13,7 @@ const generateSeed = () => {
   const actives = ['Caja', 'Banco', 'Deudores por ventas', 'Stock de trigo', 'Producción en proceso', 'Stock de harinas', 'Stock de subproductos', 'Stock de raciones', 'Molino y cilindros', 'Camión de reparto', 'Anticipos de retorno a socios', 'IVA crédito fiscal'];
   const passives = ['Proveedores de trigo', 'Capital social', 'Reserva legal', 'Fondo de educación cooperativa', 'IVA débito fiscal', 'Sueldos a pagar'];
   const results = ['Ventas de harinas', 'Ventas de raciones', 'Ventas de subproductos', 'Energía eléctrica', 'Servicio de carga y descarga', 'Fletes', 'Sueldos y jornales', 'Gastos de administración', 'Depreciaciones'];
-  
+
   actives.forEach((n, i) => accounts.push({ id: `A${String(i + 1).padStart(3, '0')}`, name: n, type: 'Activo' }));
   passives.forEach((n, i) => accounts.push({ id: `P${String(i + 1).padStart(3, '0')}`, name: n, type: 'Pasivo/Patrimonio' }));
   results.forEach((n, i) => accounts.push({ id: `R${String(i + 1).padStart(3, '0')}`, name: n, type: 'Resultado' }));
@@ -31,10 +31,12 @@ const generateSeed = () => {
   ];
 
   const otherProducts = [
-    { id: 'OP01', name: 'Harina de maíz' }, { id: 'OP02', name: 'Polenta' }, { id: 'OP03', name: 'Gofio' },
-    { id: 'OP04', name: 'Avena' }, { id: 'OP05', name: 'Maíz' }, { id: 'OP06', name: 'Ración vacas lecheras' },
-    { id: 'OP07', name: 'Ración equinos' }, { id: 'OP08', name: 'Ración ovinos' }, { id: 'OP09', name: 'Chicharrón' },
-    { id: 'OP10', name: 'Grasa' }, { id: 'OP11', name: 'Margarina' }
+    { id: 'OP01', name: 'Harina de maíz' }, { id: 'OP02', name: 'Polenta' },
+    { id: 'OP03', name: 'Gofio' }, { id: 'OP04', name: 'Avena' },
+    { id: 'OP05', name: 'Maíz' }, { id: 'OP06', name: 'Ración vacas lecheras' },
+    { id: 'OP07', name: 'Ración equinos' }, { id: 'OP08', name: 'Ración ovinos' },
+    { id: 'OP09', name: 'Chicharrón' }, { id: 'OP10', name: 'Grasa' },
+    { id: 'OP11', name: 'Margarina' }
   ];
 
   const clientTypes = ['Panadería', 'Almacén', 'Productor Lechero', 'Escuela Rural'];
@@ -51,17 +53,25 @@ const generateSeed = () => {
     const nightPattern = i % 3;
     const nightHours = nightPattern === 0 ? 40 : nightPattern === 1 ? 20 : 0;
     return {
-      id: `S${String(i + 1).padStart(3, '0')}`, name: `Socio ${String(i + 1).padStart(2, '0')}`,
-      dayHours: baseHours + extraHours - nightHours, nightHours,
-      monthlyLimit: baseHours, extraLimit: extraHours, extraApproved: i < 5,
-      advances: 0, isPartner: true
+      id: `S${String(i + 1).padStart(3, '0')}`,
+      name: `Socio ${String(i + 1).padStart(2, '0')}`,
+      dayHours: baseHours + extraHours - nightHours,
+      nightHours,
+      monthlyLimit: baseHours,
+      extraLimit: extraHours,
+      extraApproved: i < 5,
+      advances: 0,
+      isPartner: true
     };
   });
 
   const employeeRoles = ['Operario de molino', 'Chofer de reparto', 'Administrativo', 'Encargado de embolsado'];
   const employees = Array.from({ length: 12 }, (_, i) => ({
-    id: `E${String(i + 1).padStart(3, '0')}`, name: `Empleado ${String(i + 1).padStart(2, '0')}`,
-    role: employeeRoles[i % 4], monthlySalary: 4500000 + Math.floor(rand() * 500000), isPartner: false
+    id: `E${String(i + 1).padStart(3, '0')}`,
+    name: `Empleado ${String(i + 1).padStart(2, '0')}`,
+    role: employeeRoles[i % 4],
+    monthlySalary: 4500000 + Math.floor(rand() * 500000),
+    isPartner: false
   }));
 
   const entries = [];
@@ -95,7 +105,7 @@ const generateSeed = () => {
 
       productsOut.forEach(p => {
         if (p.id === 'PMER') { p.cost = 0; p.costPerKg = 0; return; }
-        if (p === maxValProd) { p.cost = totalCost - assignedCost; } 
+        if (p === maxValProd) { p.cost = totalCost - assignedCost; }
         else { p.cost = Math.floor((totalCost * p.val) / sumValue); assignedCost += p.cost; }
         p.costPerKg = p.kgs > 0 ? Math.floor((p.cost / p.kgs) * 100) / 100 : 0;
       });
@@ -116,7 +126,7 @@ const generateSeed = () => {
       const amount = 5000000 + Math.floor(rand() * 10000000);
       entries.push({ id: `E${String(entryCounter++).padStart(3, '0')}`, date, description: `Venta - ${clients[v % clients.length].name}`, lines: [{ account: 'A002', debit: amount, credit: 0 }, { account: 'R001', debit: 0, credit: amount }], confirmed: true });
     }
-    
+
     for (let c = 0; c < 5; c++) {
       const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(Math.min(1 + Math.floor((daysInMonth - 1) * c / 5), daysInMonth)).padStart(2, '0')}`;
       const amount = 15000000 + Math.floor(rand() * 5000000);
@@ -136,7 +146,6 @@ const generateSeed = () => {
       const lastDay = daysInMonth;
       const date = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       entries.push({ id: `E${String(entryCounter++).padStart(3, '0')}`, date, description: `Cierre mes ${monthKey}`, lines: [{ account: 'R001', debit: 50000000, credit: 0 }, { account: 'A011', debit: 0, credit: 50000000 }], confirmed: true, isClosing: true });
-      
       const nextMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
       const nextDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
       entries.push({ id: `E${String(entryCounter++).padStart(3, '0')}`, date: nextDate, description: `Apertura mes siguiente`, lines: [{ account: 'A001', debit: 25000000, credit: 0 }, { account: 'A002', debit: 180000000, credit: 0 }, { account: 'P002', debit: 0, credit: 205000000 }], confirmed: true, isOpening: true });
