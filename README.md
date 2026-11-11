@@ -2,6 +2,15 @@
 
 Aplicación web de contabilidad de partida doble con costeo conjunto para la Cooperativa de Trabajo Molino Florida (Uruguay).
 
+261105_ContabilidadCooperativa/
+├── index.html
+├── README.md
+├── css/
+│   └── style.css
+└── js/
+    ├── seed.js
+    └── app.js
+
 ## 🚀 Cómo arrancarlo
 No requiere instalación de dependencias ni backend.
 1. Abrir `index.html` directamente en el navegador, o
